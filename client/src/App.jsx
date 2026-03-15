@@ -31,6 +31,7 @@ function App() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [isStale, setIsStale] = useState(false);
   const [dataSource, setDataSource] = useState('');
+  const [focusedStation, setFocusedStation] = useState(null);
 
   const suggestions = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -167,6 +168,11 @@ function App() {
     setFilteredStations(filtered);
   }, [searchTerm, statusFilter, stations]);
 
+  const handleShowOnMap = (station) => {
+    setFocusedStation({ ...station, _focusTs: Date.now() });
+    setView('map');
+  };
+
   return (
     <div className="app-container">
       <header className="glass-header">
@@ -298,9 +304,9 @@ function App() {
           view === 'policy' ? (
             <PolicyPanel />
           ) : view === 'map' ? (
-            <StationMap stations={filteredStations} />
+            <StationMap stations={filteredStations} focusedStation={focusedStation} />
           ) : (
-            <StationList stations={filteredStations} />
+            <StationList stations={filteredStations} onShowOnMap={handleShowOnMap} />
           )
         )}
       </main>
@@ -317,7 +323,25 @@ function App() {
         </div>
         <div className="info">
           <Info size={14} />
-          <span>{t('source')}: {dataSource || t('nrtipCaster')}</span>
+          <span>{language === 'pt' ? 'Fonte: IBGE' : 'Source: IBGE'}</span>
+          <span className="separator">|</span>
+          <a
+            href="https://servicodados.ibge.gov.br/api/docs/rbmc"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {language === 'pt' ? 'API RBMC' : 'RBMC API'}
+          </a>
+          <span className="separator">|</span>
+          <a
+            href="https://github.com/ils15"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            GitHub: @ils15
+          </a>
+          <span className="separator">|</span>
+          <span>{language === 'pt' ? 'Feito por ils15 | Copyright 2026' : 'Made by ils15 | Copyright 2026'}</span>
         </div>
       </footer>
     </div>

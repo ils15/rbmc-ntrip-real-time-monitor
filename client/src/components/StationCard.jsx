@@ -1,92 +1,10 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { Download, Signal, WifiOff, MapPin, Wifi, Radio } from 'lucide-react';
-import jsPDF from 'jspdf';
+import React from 'react';
+import { Signal, WifiOff, MapPin, Wifi, Radio, FileText, Crosshair } from 'lucide-react';
 import { useLanguage, useTranslation } from '../i18n.jsx';
 
-const StationCard = ({ station }) => {
+const StationCard = ({ station, onOpenDownloads, onShowOnMap }) => {
   const { language } = useLanguage();
   const t = useTranslation(language);
-
-  const generatePDF = async () => {
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4',
-    });
-
-    // Colors
-    const primaryColor = [0, 242, 254]; // #00f2fe
-    const bgColor = [11, 14, 20]; // #0b0e14
-    const textColor = [224, 224, 224]; // #e0e0e0
-    const onlineColor = [68, 255, 68]; // #44ff44
-    const offlineColor = [255, 107, 107]; // #ff6b6b
-
-    // Background
-    doc.setFillColor(...bgColor);
-    doc.rect(0, 0, 210, 297, 'F');
-
-    // Header
-    doc.setFillColor(...primaryColor);
-    doc.rect(0, 0, 210, 40, 'F');
-
-    doc.setTextColor(11, 14, 20);
-    doc.setFontSize(28);
-    doc.setFont('courier', 'bold');
-    doc.text('RBMC STATION', 20, 25);
-
-    // Station Name
-    doc.setTextColor(...textColor);
-    doc.setFontSize(20);
-    doc.setFont('courier', 'bold');
-    doc.text(station.mountpoint, 20, 55);
-
-    // Status Badge
-    const statusColor = station.online ? onlineColor : offlineColor;
-    doc.setFillColor(...statusColor);
-    doc.rect(20, 58, 40, 10, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(10);
-    doc.setFont('courier', 'bold');
-    doc.text(station.online ? 'ONLINE' : 'OFFLINE', 25, 64);
-
-    // Content
-    doc.setTextColor(...textColor);
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'normal');
-
-    let yPos = 75;
-    const lineHeight = 8;
-    const labels = [
-      { label: 'Identifier:', value: station.identifier },
-      { label: 'Network:', value: station.mountpoint },
-      { label: 'Location:', value: `${station.latitude.toFixed(4)}, ${station.longitude.toFixed(4)}` },
-      { label: 'Format:', value: station.format },
-      { label: 'Navigation Systems:', value: station.navSystem },
-      { label: 'Equipment:', value: station.details },
-    ];
-
-    labels.forEach(({ label, value }) => {
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...primaryColor);
-      doc.text(label, 20, yPos);
-
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(...textColor);
-      const lines = doc.splitTextToSize(value, 160);
-      doc.text(lines, 60, yPos);
-
-      yPos += lineHeight * (1 + lines.length - 1) + 3;
-    });
-
-    // Footer
-    doc.setTextColor(160, 160, 160);
-    doc.setFontSize(8);
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 20, 287);
-    doc.text('RBMC Real-Time Monitor', 140, 287);
-
-    // Save PDF
-    doc.save(`${station.mountpoint}-report.pdf`);
-  };
 
   return (
     <div className="station-card">
@@ -160,15 +78,22 @@ const StationCard = ({ station }) => {
         </div>
       </div>
 
-      <div className="card-footer">
+      <div className="card-footer card-footer-actions">
         <button
           className="btn-secondary"
-          onClick={generatePDF}
-          aria-label={t('downloadReport')}
-          title={t('downloadReport')}
+          onClick={() => onShowOnMap?.(station)}
+          aria-label={t('showOnMap')}
         >
-          <Download size={16} />
-          {t('downloadReport')}
+          <Crosshair size={16} />
+          {t('showOnMap')}
+        </button>
+        <button
+          className="btn-primary"
+          onClick={() => onOpenDownloads(station)}
+          aria-label={t('reportsAndRinex') || 'Relatórios & RINEX'}
+        >
+          <FileText size={16} style={{ marginRight: '8px' }} />
+          {t('reportsAndRinex') || 'Relatórios & RINEX'}
         </button>
       </div>
     </div>

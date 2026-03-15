@@ -1,15 +1,40 @@
-import React, { useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Tooltip } from 'react-leaflet';
+import React, { useMemo, useRef, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Tooltip, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { ExternalLink } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage, useTranslation } from '../i18n.jsx';
 
-const StationMap = ({ stations }) => {
+const FocusOnStation = ({ focusedStation, markerRefs }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!focusedStation) return;
+
+    const lat = Number(focusedStation.latitude);
+    const lng = Number(focusedStation.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+    map.flyTo([lat, lng], Math.max(map.getZoom(), 8), { duration: 0.8 });
+
+    const markerKey = focusedStation.mountpoint || focusedStation.identifier;
+    const marker = markerRefs.current[markerKey];
+    if (marker && typeof marker.openPopup === 'function') {
+      setTimeout(() => marker.openPopup(), 450);
+    }
+  }, [focusedStation, map, markerRefs]);
+
+  return null;
+};
+
+const StationMap = ({ stations, focusedStation }) => {
   const { theme } = useTheme();
   const { language } = useLanguage();
   const t = useTranslation(language);
+  const markerRefs = useRef({});
+
+  const formatLongValue = (value) => String(value || '').replace(/,/g, ', ');
 
   // Center of Brazil
   const center = [-14.235, -51.9253];
@@ -80,12 +105,18 @@ const StationMap = ({ stations }) => {
         url={tileUrl}
         maxZoom={19}
       />
+      <FocusOnStation focusedStation={focusedStation} markerRefs={markerRefs} />
       {stations.map((station) => (
         <Marker
           key={station.mountpoint}
           position={[station.latitude, station.longitude]}
           icon={station.online ? onlineIcon : offlineIcon}
           title={station.mountpoint}
+          ref={(instance) => {
+            if (instance) {
+              markerRefs.current[station.mountpoint] = instance;
+            }
+          }}
         >
           <Tooltip
             direction="top"
@@ -130,11 +161,11 @@ const StationMap = ({ stations }) => {
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">Systems:</span>
-                  <span className="detail-value">{station.navSystem}</span>
+                  <span className="detail-value">{formatLongValue(station.navSystem)}</span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">Equipment:</span>
-                  <span className="detail-value">{station.details}</span>
+                  <span className="detail-value">{formatLongValue(station.details)}</span>
                 </div>
               </div>
               <div className="popup-reference-row">
