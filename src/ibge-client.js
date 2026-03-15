@@ -233,9 +233,9 @@ class IBGEClient {
 
   /**
    * Get stations with caching and fallback support
+   * Priority: 1) Cache, 2) NTRIP (real-time, many points), 3) IBGE API, 4) Mock
    */
   async getStations(options = {}) {
-    const { fallbackToNTRIP = true } = options;
     const startTime = Date.now();
 
     try {
@@ -245,35 +245,21 @@ class IBGEClient {
         return {
           success: true,
           stations: cached.data,
-          source: 'ibge',
+          source: cached.data.length > 10 ? 'ntrip' : 'ibge',
           lastUpdated: new Date(cached.timestamp).toISOString(),
           cacheStatus: 'fresh',
           responseTime: Date.now() - startTime
         };
       }
 
-      // Fetch fresh data
-      console.log('[IBGEClient] Fetching fresh data from IBGE...');
-      const stations = await this.fetchStations();
-
-      // Cache the result
-      await this.setCache(stations);
-
-      return {
-        success: true,
-        stations,
-        source: 'ibge',
-        lastUpdated: new Date().toISOString(),
-        cacheStatus: 'fresh',
-        responseTime: Date.now() - startTime
-      };
-    } catch (error) {
-      // If IBGE fails, try NTRIP fallback
-      if (fallbackToNTRIP) {
-        try {
-          const stations = await this.fallbackToNTRIP();
-
-          // Cache fallback data
+      // Try NTRIP first (real-time, ~140+ stations)
+      console.log('[IBGEClient] Fetching from NTRIP caster...');
+      try {
+        const stations = await this.fallbackToNTRIP();
+        
+        if (stations && stations.length > 10) {
+          console.log(`[IBGEClient] Got ${stations.length} stations from NTRIP`);
+          // Cache the result
           await this.setCache(stations);
 
           return {
@@ -281,25 +267,38 @@ class IBGEClient {
             stations,
             source: 'ntrip',
             lastUpdated: new Date().toISOString(),
-            cacheStatus: 'fallback',
-            error: `IBGE error: ${error.message}`,
-            responseTime: Date.now() - startTime
-          };
-        } catch (ntripError) {
-          console.error('[IBGEClient] Both IBGE and NTRIP failed');
-          return {
-            success: false,
-            stations: [],
-            source: 'error',
-            lastUpdated: new Date().toISOString(),
-            cacheStatus: 'none',
-            error: `Both sources failed: IBGE(${error.message}), NTRIP(${ntripError.message})`,
+            cacheStatus: 'fresh',
             responseTime: Date.now() - startTime
           };
         }
+      } catch (ntripError) {
+        console.warn(`[IBGEClient] NTRIP failed: ${ntripError.message}`);
+        // Fall through to IBGE
       }
 
-      // No fallback requested
+      // Fallback to IBGE API
+      console.log('[IBGEClient] Fetching fresh data from IBGE API...');
+      const stations = await this.fetchStations();
+
+      if (stations && stations.length > 0) {
+        console.log(`[IBGEClient] Got ${stations.length} stations from IBGE`);
+        // Cache the result
+        await this.setCache(stations);
+
+        return {
+          success: true,
+          stations,
+          source: 'ibge',
+          lastUpdated: new Date().toISOString(),
+          cacheStatus: 'fresh',
+          responseTime: Date.now() - startTime
+        };
+      }
+
+      // All sources failed or empty
+      throw new Error('No stations available from any source');
+    } catch (error) {
+      console.error('[IBGEClient] All sources failed:', error.message);
       return {
         success: false,
         stations: [],

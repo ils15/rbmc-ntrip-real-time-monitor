@@ -38,7 +38,7 @@ describe('IBGEClient', () => {
 
       assert.ok(response.success, 'response should have success: true');
       assert.ok(Array.isArray(response.stations), 'response should have stations array');
-      assert.strictEqual(response.source, 'ibge', 'source should be "ibge"');
+      assert.ok(['ntrip', 'ibge'].includes(response.source), 'source should be "ntrip" or "ibge"');
       assert.ok(response.lastUpdated, 'should have lastUpdated timestamp');
       assert.ok(['fresh', 'stale'].includes(response.cacheStatus), 'should have valid cacheStatus');
     });

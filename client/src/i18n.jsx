@@ -8,6 +8,8 @@ export const translations = {
     refresh: 'Atualizar',
     mapView: 'Visualização do mapa',
     listView: 'Visualização em lista',
+    privacyAndDocs: 'Privacidade e Documentação',
+    searchSuggestions: 'Sugestões de busca',
 
     // Status
     allStations: 'Todas',
@@ -42,6 +44,25 @@ export const translations = {
     // Language
     englishUS: 'English',
     portugueseBR: 'Português',
+
+    // Privacy & docs panel
+    policyIntro: 'Esta seção resume como os dados de estações são exibidos, protegidos e referenciados no sistema.',
+    policyDataUseTitle: 'Uso de Dados',
+    policyDataUse1: 'A aplicação mostra dados públicos de estações GNSS para monitoramento técnico.',
+    policyDataUse2: 'A busca pode ser feita por identificador, mountpoint, nome da estação e estado (UF).',
+    policyDataUse3: 'Os dados exibidos priorizam fonte NTRIP em tempo real, com fallback para fonte IBGE.',
+    policyDataUse4: 'As informações são exibidas para apoio operacional e não substituem validação oficial de campo.',
+    policyPrivacyTitle: 'Privacidade',
+    policyPrivacy1: 'Nenhum dado pessoal sensível é coletado no fluxo principal do monitor.',
+    policyPrivacy2: 'Preferências locais de interface (tema e idioma) são salvas no navegador do usuário.',
+    policyPrivacy3: 'As requisições de dados de estações são tratadas no backend para reduzir exposição de origem externa.',
+    policyPrivacy4: 'Logs técnicos podem existir para observabilidade, sem finalidade de perfilamento individual.',
+    policyIbgeTitle: 'Política de Referência IBGE',
+    policyIbge1: 'Fonte pública: IBGE / Serviço de Dados (RBMC).',
+    policyIbge2: 'Acesso público sem autenticação obrigatória.',
+    policyIbge3: 'Reuso permitido, mantendo atribuição da fonte.',
+    policyIbge4: 'Sempre referenciar a origem quando exportar ou publicar os dados.',
+    policyRefsTitle: 'Referências Oficiais',
   },
   en: {
     // Header
@@ -50,6 +71,8 @@ export const translations = {
     refresh: 'Refresh',
     mapView: 'Map view',
     listView: 'List view',
+    privacyAndDocs: 'Privacy & Documentation',
+    searchSuggestions: 'Search suggestions',
 
     // Status
     allStations: 'All',
@@ -84,6 +107,25 @@ export const translations = {
     // Language
     englishUS: 'English',
     portugueseBR: 'Português',
+
+    // Privacy & docs panel
+    policyIntro: 'This section summarizes how station data is displayed, protected, and referenced in the system.',
+    policyDataUseTitle: 'Data Usage',
+    policyDataUse1: 'The application displays public GNSS station data for technical monitoring.',
+    policyDataUse2: 'Search supports station identifier, mountpoint, station name, and state (UF).',
+    policyDataUse3: 'Displayed data prioritizes real-time NTRIP source, with IBGE as fallback.',
+    policyDataUse4: 'Information supports operations and does not replace official field validation.',
+    policyPrivacyTitle: 'Privacy',
+    policyPrivacy1: 'No sensitive personal data is collected in the monitor core flow.',
+    policyPrivacy2: 'Local UI preferences (theme and language) are stored in the user browser.',
+    policyPrivacy3: 'Station data requests are handled by the backend to reduce direct external source exposure.',
+    policyPrivacy4: 'Technical logs may exist for observability without individual profiling purposes.',
+    policyIbgeTitle: 'IBGE Reference Policy',
+    policyIbge1: 'Public source: IBGE / Servico de Dados (RBMC).',
+    policyIbge2: 'Public access without mandatory authentication.',
+    policyIbge3: 'Reuse is allowed while keeping source attribution.',
+    policyIbge4: 'Always reference origin when exporting or publishing data.',
+    policyRefsTitle: 'Official References',
   },
 };
 

@@ -1,6 +1,6 @@
-# RBMC Monitor
+# Monitor de Estacoes NTRIP IBGE
 
-Um monitor em tempo real para as estações da RBMC (Rede Brasileira de Monitoramento Contínuo dos Sistemas GNSS).
+Um monitor em tempo real para as estacoes da RBMC (Rede Brasileira de Monitoramento Continuo dos Sistemas GNSS), com prioridade de dados NTRIP e referencia IBGE.
 
 O projeto consiste em um dashboard que exibe o status e a localização das estações GNSS através de dados obtidos de um NTRIP Caster.
 
@@ -10,6 +10,27 @@ O projeto consiste em um dashboard que exibe o status e a localização das esta
 - Lista detalhada das estações (ponto de montagem, sistema de navegação, etc.).
 - Atualização em tempo real via proxy Node.js.
 - Interface responsiva com design moderno.
+- Tema claro/escuro com basemap dedicado por tema.
+- Aba de privacidade e documentacao com referencias oficiais do IBGE.
+- Busca inteligente com sugestoes em tempo real.
+
+## 🖼️ Capturas de Tela
+
+### Mapa - Modo Claro
+
+![Mapa em modo claro](docs/images/mapa-modo-claro.png)
+
+### Mapa - Modo Escuro
+
+![Mapa em modo escuro](docs/images/mapa-modo-escuro.png)
+
+### Visualizacao em Lista
+
+![Lista de estacoes](docs/images/lista-estacoes.png)
+
+### Aba de Privacidade e Documentacao
+
+![Politica e documentacao](docs/images/politica-documentacao.png)
 
 ## 🛠️ Tecnologias Utilizadas
 

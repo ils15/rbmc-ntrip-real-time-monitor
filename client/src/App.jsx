@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import { Activity, Search, Map as MapIcon, List, Info, Database, RefreshCcw, AlertCircle, Sun, Moon, Globe } from 'lucide-react';
+import { Activity, Search, Map as MapIcon, List, Info, Database, RefreshCcw, AlertCircle, Sun, Moon, Globe, ShieldCheck } from 'lucide-react';
 import StationMap from './components/StationMap';
 import StationList from './components/StationList';
+import PolicyPanel from './components/PolicyPanel';
 import { useTheme } from './context/ThemeContext';
 import { useLanguage, useTranslation } from './i18n.jsx';
 
@@ -24,12 +24,40 @@ function App() {
   const [filteredStations, setFilteredStations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [view, setView] = useState('map'); // 'map' or 'list'
+  const [view, setView] = useState('map'); // map | list | policy
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all'); // all | online | offline
   const [fetchError, setFetchError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [isStale, setIsStale] = useState(false);
   const [dataSource, setDataSource] = useState('');
+
+  const suggestions = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return [];
+
+    const seen = new Set();
+    const result = [];
+
+    stations.forEach((station) => {
+      const candidates = [station.identifier, station.mountpoint, station.name, station.uf];
+
+      candidates.forEach((candidate) => {
+        if (!candidate || result.length >= 8) return;
+
+        const value = String(candidate).trim();
+        if (!value) return;
+
+        const key = value.toLowerCase();
+        if (key.includes(query) && !seen.has(key)) {
+          seen.add(key);
+          result.push(value);
+        }
+      });
+    });
+
+    return result;
+  }, [searchTerm, stations]);
 
   useEffect(() => {
     fetchStations();
@@ -122,9 +150,11 @@ function App() {
 
   useEffect(() => {
     const filtered = stations.filter((s) => {
+      const query = searchTerm.trim().toLowerCase();
+      const searchableFields = [s.identifier, s.mountpoint, s.name, s.uf];
       const matchesSearch =
-        s.identifier?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.mountpoint?.toLowerCase().includes(searchTerm.toLowerCase());
+        query.length === 0 ||
+        searchableFields.some((field) => String(field || '').toLowerCase().includes(query));
 
       const matchesStatus =
         statusFilter === 'all' ||
@@ -142,7 +172,7 @@ function App() {
       <header className="glass-header">
         <div className="logo-section">
           <Activity className="icon-pulse" />
-          <h1>RBMC <span>Real-Time</span></h1>
+          <h1>Monitor de Estações <span>NTRIP IBGE</span></h1>
         </div>
         <div className="search-bar glass">
           <Search size={18} />
@@ -151,7 +181,27 @@ function App() {
             placeholder={t('searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
           />
+          {showSuggestions && suggestions.length > 0 && (
+            <ul className="search-suggestions" role="listbox" aria-label={t('searchSuggestions')}>
+              {suggestions.map((suggestion) => (
+                <li key={suggestion}>
+                  <button
+                    type="button"
+                    className="suggestion-item"
+                    onMouseDown={() => {
+                      setSearchTerm(suggestion);
+                      setShowSuggestions(false);
+                    }}
+                  >
+                    {suggestion}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         <div className="controls">
           <div className="status-filter glass">
@@ -186,6 +236,14 @@ function App() {
               title={t('listView')}
             >
               <List size={20} />
+            </button>
+            <button
+              className={view === 'policy' ? 'active' : ''}
+              onClick={() => setView('policy')}
+              aria-label={t('privacyAndDocs')}
+              title={t('privacyAndDocs')}
+            >
+              <ShieldCheck size={20} />
             </button>
           </nav>
 
@@ -237,7 +295,9 @@ function App() {
             <p>{t('loading')}</p>
           </div>
         ) : (
-          view === 'map' ? (
+          view === 'policy' ? (
+            <PolicyPanel />
+          ) : view === 'map' ? (
             <StationMap stations={filteredStations} />
           ) : (
             <StationList stations={filteredStations} />

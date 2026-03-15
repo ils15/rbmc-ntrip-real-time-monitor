@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { ExternalLink } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage, useTranslation } from '../i18n.jsx';
 
@@ -16,7 +17,7 @@ const StationMap = ({ stations }) => {
   // Tile layer URLs based on theme
   const tileUrl = theme === 'light'
     ? 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-    : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+    : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 
   const tileAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
@@ -38,8 +39,8 @@ const StationMap = ({ stations }) => {
       className: 'custom-marker online-marker',
       iconSize: [32, 32],
       iconAnchor: [16, 16],
-      popupAnchor: [0, -16],
-      tooltipAnchor: [0, -20]
+      popupAnchor: [0, -24],
+      tooltipAnchor: [0, -28]
     });
   }, []);
 
@@ -60,8 +61,8 @@ const StationMap = ({ stations }) => {
       className: 'custom-marker offline-marker',
       iconSize: [32, 32],
       iconAnchor: [16, 16],
-      popupAnchor: [0, -16],
-      tooltipAnchor: [0, -20]
+      popupAnchor: [0, -24],
+      tooltipAnchor: [0, -28]
     });
   }, []);
 
@@ -88,8 +89,8 @@ const StationMap = ({ stations }) => {
         >
           <Tooltip
             direction="top"
-            offset={[0, -15]}
-            opacity={0.9}
+            offset={[0, -30]}
+            opacity={1}
             permanent={false}
             className="station-tooltip"
           >
@@ -105,20 +106,12 @@ const StationMap = ({ stations }) => {
           </Tooltip>
           <Popup className="station-popup" maxWidth={300} minWidth={250}>
             <div className="popup-content">
-              <h4 style={{ margin: '0 0 0.75rem 0', color: '#00f2fe', fontFamily: 'JetBrains Mono', fontSize: '1.1rem' }}>
+              <h4 className="popup-title">
                 {station.mountpoint}
               </h4>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                <span style={{ fontSize: '0.85rem', color: '#a0a0a0' }}>Status</span>
-                <span style={{
-                  padding: '0.2rem 0.5rem',
-                  borderRadius: '6px',
-                  fontSize: '0.75rem',
-                  fontWeight: 'bold',
-                  background: station.online ? 'rgba(68, 255, 68, 0.15)' : 'rgba(255, 107, 107, 0.15)',
-                  color: station.online ? '#44ff44' : '#ff6b6b',
-                  border: `1px solid ${station.online ? 'rgba(68, 255, 68, 0.4)' : 'rgba(255, 107, 107, 0.4)'}`
-                }}>
+              <div className="popup-status-row">
+                <span className="popup-status-label">Status</span>
+                <span className={`popup-status-badge ${station.online ? 'online' : 'offline'}`}>
                   {station.online ? 'ONLINE' : 'OFFLINE'}
                 </span>
               </div>
@@ -144,13 +137,12 @@ const StationMap = ({ stations }) => {
                   <span className="detail-value">{station.details}</span>
                 </div>
               </div>
-              <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem' }}>
+              <div className="popup-reference-row">
                 <ExternalLink size={14} />
                 <a
                   href={`https://www.ibge.gov.br`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ color: '#00f2fe', textDecoration: 'none', cursor: 'pointer' }}
                   title="Learn more about IBGE"
                 >
                   IBGE Reference
