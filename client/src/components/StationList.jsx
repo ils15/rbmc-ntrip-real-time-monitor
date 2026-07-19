@@ -14,7 +14,7 @@ const StationList = ({ stations, onShowOnMap }) => {
   const totalPages = Math.max(1, Math.ceil(stations.length / STATIONS_PER_PAGE));
   const paginatedStations = useMemo(() => {
     const start = (currentPage - 1) * STATIONS_PER_PAGE;
-    return stations.slice(start, start + STATIONS_PER_PAGE).slice(0, STATIONS_PER_PAGE);
+    return stations.slice(start, start + STATIONS_PER_PAGE);
   }, [currentPage, stations]);
 
   const pageStart = stations.length === 0 ? 0 : (currentPage - 1) * STATIONS_PER_PAGE + 1;

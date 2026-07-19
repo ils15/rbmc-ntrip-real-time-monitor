@@ -129,9 +129,10 @@ const StationMap = ({ stations, focusedStation }) => {
               <strong>{station.mountpoint}</strong>
               <div style={{ fontSize: '0.8rem', marginTop: '0.3rem' }}>
                 <div>{station.identifier}</div>
-                <div style={{ color: station.online ? '#44ff44' : '#ff6b6b' }}>
-                  {station.online ? '🟢 Online' : '🔴 Offline'}
-                </div>
+                <div className="status-indicator">
+                    <span className={`status-dot ${station.online ? 'online' : 'offline'}`} />
+                    <span>{station.online ? 'Online' : 'Offline'}</span>
+                  </div>
               </div>
             </div>
           </Tooltip>

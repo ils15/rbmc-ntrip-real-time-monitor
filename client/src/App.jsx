@@ -1,11 +1,14 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import L from 'leaflet';
 import { Activity, Search, Map as MapIcon, List, Info, Database, RefreshCcw, AlertCircle, Sun, Moon, Globe, ShieldCheck } from 'lucide-react';
 import StationMap from './components/StationMap';
 import StationList from './components/StationList';
 import PolicyPanel from './components/PolicyPanel';
+import AvailabilityChart from './components/AvailabilityChart';
+import { MapSkeleton, ListSkeleton } from './components/LoadingSkeleton';
 import { useTheme } from './context/ThemeContext';
 import { useLanguage, useTranslation } from './i18n.jsx';
+import { useStationSSE } from './hooks/useStationSSE';
 
 // Fix Leaflet marker icons
 delete L.Icon.Default.prototype._getIconUrl;
@@ -32,6 +35,25 @@ function App() {
   const [isStale, setIsStale] = useState(false);
   const [dataSource, setDataSource] = useState('');
   const [focusedStation, setFocusedStation] = useState(null);
+  const [sseConnected, setSseConnected] = useState(false);
+  const [selectedStation, setSelectedStation] = useState(null);
+
+  // Stable SSE update callback
+  const handleSSEUpdate = useCallback((stations, source) => {
+    const normalizedStations = stations.map((s) => normalizeStation(s, source));
+    setStations(normalizedStations);
+    setLastUpdated(new Date());
+    setDataSource(source || 'SSE');
+    setFetchError(null);
+    setLoading(false);
+  }, []);
+
+  const handleSSEConnection = useCallback((connected) => {
+    setSseConnected(connected);
+  }, []);
+
+  // SSE hook — only activate after initial data load
+  useStationSSE(handleSSEUpdate, handleSSEConnection, stations.length > 0);
 
   const suggestions = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -62,8 +84,7 @@ function App() {
 
   useEffect(() => {
     fetchStations();
-    const interval = setInterval(fetchStations, 60000); // Update every minute
-    return () => clearInterval(interval);
+    // SSE handles subsequent updates; no polling needed
   }, []);
 
   // Normalize station data from different sources (IBGE vs NTRIP)
@@ -173,6 +194,10 @@ function App() {
     setView('map');
   };
 
+  const handleInfo = (station) => {
+    setSelectedStation(selectedStation === station.mountpoint ? null : station.mountpoint);
+  };
+
   return (
     <div className="app-container">
       <header className="glass-header">
@@ -180,9 +205,11 @@ function App() {
           <Activity className="icon-pulse" />
           <h1>Monitor de Estações <span>NTRIP IBGE</span></h1>
         </div>
-        <div className="search-bar glass">
+        <div className="search-bar glass" role="search">
           <Search size={18} />
+          <label htmlFor="station-search" className="visually-hidden">{t('searchPlaceholder')}</label>
           <input
+            id="station-search"
             type="text"
             placeholder={t('searchPlaceholder')}
             value={searchTerm}
@@ -226,7 +253,7 @@ function App() {
             </select>
           </div>
 
-          <nav className="view-toggle glass">
+          <nav className="view-toggle glass" aria-label={language === 'pt' ? 'Alternar visualização' : 'Toggle view'}>
             <button
               className={view === 'map' ? 'active' : ''}
               onClick={() => setView('map')}
@@ -252,6 +279,19 @@ function App() {
               <ShieldCheck size={20} />
             </button>
           </nav>
+
+          {/* Export Buttons */}
+          <div className="export-section">
+            <a href="/api/export/stations.csv" className="btn-export" download>
+              Export CSV
+            </a>
+            <a href="/api/export/availability.csv" className="btn-export" download>
+              Export Availability
+            </a>
+            <a href="/api/docs" className="btn-export" target="_blank" rel="noopener noreferrer">
+              API Docs
+            </a>
+          </div>
 
           {/* Language Picker */}
           <div className="language-picker glass">
@@ -288,6 +328,14 @@ function App() {
       </header>
 
       <main className="content">
+        {!sseConnected && stations.length > 0 && (
+          <div className="offline-banner" role="status">
+            {language === 'pt'
+              ? 'Conexão perdida. Mostrando últimos dados conhecidos.'
+              : 'Connection lost. Showing last known data.'}
+          </div>
+        )}
+
         {fetchError && (
           <div className="alert error" role="alert">
             <AlertCircle size={16} />
@@ -295,11 +343,13 @@ function App() {
           </div>
         )}
 
-        {loading ? (
+        {loading && stations.length === 0 ? (
           <div className="loader">
             <div className="spinner"></div>
             <p>{t('loading')}</p>
           </div>
+        ) : loading ? (
+          view === 'map' ? <MapSkeleton /> : <ListSkeleton />
         ) : (
           view === 'policy' ? (
             <PolicyPanel />
@@ -309,12 +359,19 @@ function App() {
             <StationList stations={filteredStations} onShowOnMap={handleShowOnMap} />
           )
         )}
+
+        {selectedStation && (
+          <AvailabilityChart
+            stationCode={selectedStation}
+            onClose={() => setSelectedStation(null)}
+          />
+        )}
       </main>
 
       <footer className="glass-footer">
         <div className="stats">
           <Database size={14} />
-          <span>{stations.length} {t('stations')}</span>
+          <span aria-live="polite" aria-atomic="true">{filteredStations.length} {t('stations')}</span>
           <span className="separator">|</span>
           <span>
             {t('updated')}: {lastUpdated ? lastUpdated.toLocaleTimeString(language === 'pt' ? 'pt-BR' : 'en-US') : '—'}

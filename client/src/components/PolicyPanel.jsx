@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ExternalLink, Lock, Shield, FileText, Database } from 'lucide-react';
 import { useLanguage, useTranslation } from '../i18n.jsx';
 
@@ -12,6 +12,14 @@ const links = {
 const PolicyPanel = () => {
   const { language } = useLanguage();
   const t = useTranslation(language);
+  const [coverage, setCoverage] = useState(null);
+
+  useEffect(() => {
+    fetch('/api/coverage')
+      .then(r => r.json())
+      .then(setCoverage)
+      .catch(() => {});
+  }, []);
 
   return (
     <section className="policy-panel" aria-label={t('privacyAndDocs')}>
@@ -85,6 +93,35 @@ const PolicyPanel = () => {
           </div>
         </article>
       </div>
+
+      {coverage && coverage.regions && (
+        <div className="coverage-section">
+          <h3 style={{ marginTop: '1.5rem' }}>Regional Coverage</h3>
+          <div className="coverage-grid">
+            {coverage.regions.map(region => (
+              <div key={region.name} className="coverage-card">
+                <h4>{region.name}</h4>
+                <div className="coverage-stat">
+                  <span>Stations</span>
+                  <span className="value">{region.totalStations}</span>
+                </div>
+                <div className="coverage-stat">
+                  <span>Online</span>
+                  <span className="value" style={{ color: 'var(--online, #44ff44)' }}>{region.onlineStations}</span>
+                </div>
+                <div className="coverage-stat">
+                  <span>Offline</span>
+                  <span className="value" style={{ color: 'var(--offline, #ff6b6b)' }}>{region.offlineStations}</span>
+                </div>
+                <div className="coverage-stat">
+                  <span>Coverage</span>
+                  <span className={`coverage-rating ${region.coverageRating}`}>{region.coverageRating}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 };
