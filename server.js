@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
+const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -740,6 +741,18 @@ app.get('/api/docs', (req, res) => {
     }
   });
 });
+
+
+// ===== SERVE REACT FRONTEND (production) =====
+const clientDistPath = path.join(__dirname, 'client', 'dist');
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(clientDistPath));
+  // SPA fallback: serve index.html for all non-API routes
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api/')) return next();
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+}
 
 // Global error handler
 app.use((err, req, res, next) => {

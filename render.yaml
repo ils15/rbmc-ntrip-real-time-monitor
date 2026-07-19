@@ -1,12 +1,15 @@
 services:
   - type: web
-    name: rbmc-backend
+    name: rbmc-monitor
     env: node
-    buildCommand: npm install
+    buildCommand: npm install && cd client && npm install && npm run build
     startCommand: node server.js
+    autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 10000
       - key: CORS_ALLOWED_ORIGINS
         sync: false
       - key: NTRIP_CASTER_URL
@@ -16,4 +19,6 @@ services:
       - key: IBGE_API_BASE_URL
         value: https://servicodados.ibge.gov.br/api/v1/rbmc/estacoes
       - key: IBGE_CACHE_TTL
+        value: "300000"
+      - key: CACHE_TTL_MS
         value: "300000"
