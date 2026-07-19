@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node --test",
+    "test": "node --test test/ntrip.test.js test/ibge-client.test.js test/integration.test.js test/availability-tracker.test.js",
+    "test:all": "npm test && cd client && npm test",
     "start": "node server.js",
     "dev": "node --watch server.js",
     "dev:client": "cd client && npm run dev",
@@ -16,13 +17,16 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/rbmc-monitor.git"
+    "url": "https://github.com/ils15/rbmc-monitor"
   },
   "dependencies": {
     "axios": "^1.13.6",
+    "compression": "^1.8.1",
     "cors": "^2.8.6",
     "dotenv": "^16.3.1",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.6.0",
+    "helmet": "^8.3.0",
     "redis": "^4.7.0"
   },
   "devDependencies": {
