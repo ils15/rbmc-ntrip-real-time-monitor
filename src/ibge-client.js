@@ -9,10 +9,9 @@ const axios = require('axios');
  */
 class IBGEClient {
   constructor(options = {}) {
-    this.apiUrl = options.apiUrl || 'https://servicodados.ibge.gov.br/api/v1/rbmc/estacoes';
+    this.apiUrl = options.apiUrl || process.env.IBGE_API_BASE_URL || 'https://servicodados.ibge.gov.br/api/v1/rbmc/estacoes';
     this.timeout = options.timeout || 5000;
     this.cacheTTL = options.cacheTTL || 60 * 60 * 1000; // 1 hour default
-    this.ntripUrl = options.ntripUrl || 'http://170.84.40.52:2101';
 
     // In-memory cache
     this.cache = {
@@ -132,7 +131,8 @@ class IBGEClient {
       console.log('[IBGEClient] Falling back to NTRIP caster...');
       const { parseSourceTable } = require('./ntrip');
       
-      const response = await axios.get(this.ntripUrl, {
+      const ntripUrl = process.env.NTRIP_CASTER_URL || 'http://170.84.40.52:2101';
+      const response = await axios.get(ntripUrl, {
         timeout: this.timeout,
         headers: {
           'Ntrip-Version': '2.0',

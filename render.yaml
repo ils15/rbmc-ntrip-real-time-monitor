@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: rbmc-backend
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: NTRIP_CASTER_URL
+        value: http://170.84.40.52:2101
+      - key: RBMC_API_BASE_URL
+        value: https://servicodados.ibge.gov.br/api/v1/rbmc
+      - key: IBGE_API_BASE_URL
+        value: https://servicodados.ibge.gov.br/api/v1/rbmc/estacoes
+      - key: IBGE_CACHE_TTL
+        value: "300000"
