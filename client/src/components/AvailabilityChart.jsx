@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage, useTranslation } from '../i18n.jsx';
+import { apiUrl } from '../api';
 
 function AvailabilityChart({ stationCode, onClose }) {
   const [data, setData] = useState(null);
@@ -10,7 +11,7 @@ function AvailabilityChart({ stationCode, onClose }) {
   useEffect(() => {
     if (!stationCode) return;
     setLoading(true);
-    fetch(`/api/availability/${stationCode}?days=30`)
+    fetch(apiUrl(`/api/availability/${stationCode}?days=30`))
       .then(r => r.json())
       .then(d => { setData(d); setLoading(false); })
       .catch(() => setLoading(false));

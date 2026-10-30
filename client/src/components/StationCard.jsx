@@ -1,8 +1,8 @@
 import React from 'react';
-import { Signal, WifiOff, MapPin, Wifi, Radio, FileText, Crosshair } from 'lucide-react';
+import { Signal, WifiOff, MapPin, Wifi, Radio, FileText, Crosshair, BarChart3 } from 'lucide-react';
 import { useLanguage, useTranslation } from '../i18n.jsx';
 
-const StationCard = ({ station, onOpenDownloads, onShowOnMap }) => {
+const StationCard = ({ station, onOpenDownloads, onShowOnMap, onInfo }) => {
   const { language } = useLanguage();
   const t = useTranslation(language);
 
@@ -87,6 +87,16 @@ const StationCard = ({ station, onOpenDownloads, onShowOnMap }) => {
           <Crosshair size={16} />
           {t('showOnMap')}
         </button>
+        {onInfo && (
+          <button
+            className="btn-secondary"
+            onClick={() => onInfo(station)}
+            aria-label={t('availability') || 'Disponibilidade'}
+          >
+            <BarChart3 size={16} />
+            {t('availability') || 'Disponibilidade'}
+          </button>
+        )}
         <button
           className="btn-primary"
           onClick={() => onOpenDownloads(station)}

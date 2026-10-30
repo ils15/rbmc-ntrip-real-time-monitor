@@ -6,6 +6,24 @@
 const fs = require('fs');
 const path = require('path');
 
+/**
+ * Normalize a station reference (mountpoint, identifier or id) to the
+ * canonical 4-character RBMC station code, mirroring server.js logic.
+ * e.g. 'NAUS00BGD0' -> 'NAUS', 'ssra-02' -> 'SSRA'
+ */
+function normalizeStationKey(raw) {
+  const normalized = String(raw || '')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+
+  if (normalized.length === 5 && normalized.endsWith('0')) {
+    return normalized.slice(0, 4);
+  }
+
+  return normalized.slice(0, 4);
+}
+
 class AvailabilityTracker {
   constructor(options = {}) {
     this.data = {}; // { stationCode: [{ status: 'online'|'offline', timestamp: ISO }] }
@@ -18,7 +36,19 @@ class AvailabilityTracker {
     try {
       if (fs.existsSync(this.filePath)) {
         const raw = fs.readFileSync(this.filePath, 'utf8');
-        this.data = JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        // Migrate legacy long keys (full mountpoints) to 4-char station codes
+        this.data = {};
+        for (const [key, history] of Object.entries(parsed)) {
+          const normalizedKey = normalizeStationKey(key);
+          if (!normalizedKey) continue;
+          this.data[normalizedKey] = (this.data[normalizedKey] || []).concat(history);
+        }
+        for (const key of Object.keys(this.data)) {
+          this.data[key] = this.data[key]
+            .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+            .filter((entry, i, arr) => i === 0 || arr[i - 1].status !== entry.status);
+        }
         console.log(`[Availability] Loaded ${Object.keys(this.data).length} stations from disk`);
       }
     } catch (err) {
@@ -75,7 +105,7 @@ class AvailabilityTracker {
    */
   recordBatch(stations) {
     for (const station of stations) {
-      const code = station.mountpoint || station.identifier || station.id;
+      const code = normalizeStationKey(station.mountpoint || station.identifier || station.id);
       if (code) {
         this.recordStatus(code, station.online);
       }
@@ -88,7 +118,7 @@ class AvailabilityTracker {
    * Returns array of { status, timestamp } sorted newest first.
    */
   getHistory(stationCode, days = 30) {
-    const history = this.data[stationCode] || [];
+    const history = this.data[normalizeStationKey(stationCode)] || [];
     const cutoff = Date.now() - (days * 24 * 60 * 60 * 1000);
     return history
       .filter(e => new Date(e.timestamp).getTime() > cutoff)
@@ -139,4 +169,4 @@ class AvailabilityTracker {
   }
 }
 
-module.exports = { AvailabilityTracker };
+module.exports = { AvailabilityTracker, normalizeStationKey };

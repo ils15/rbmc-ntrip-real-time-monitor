@@ -9,6 +9,7 @@ import { MapSkeleton, ListSkeleton } from './components/LoadingSkeleton';
 import { useTheme } from './context/ThemeContext';
 import { useLanguage, useTranslation } from './i18n.jsx';
 import { useStationSSE } from './hooks/useStationSSE';
+import { apiUrl } from './api';
 
 // Fix Leaflet marker icons
 delete L.Icon.Default.prototype._getIconUrl;
@@ -17,6 +18,18 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
+
+// Mirror backend normalizeStationCode: derive the canonical 4-char RBMC code
+function toStationCode(raw) {
+  const normalized = String(raw || '')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+  if (normalized.length === 5 && normalized.endsWith('0')) {
+    return normalized.slice(0, 4);
+  }
+  return normalized.slice(0, 4);
+}
 
 function App() {
   const { theme, toggleTheme } = useTheme();
@@ -96,6 +109,7 @@ function App() {
         identifier: station.sigla || station.id,
         mountpoint: station.name || station.nome || `${station.sigla}-${station.uf}`,
         name: station.name || station.nome,
+        code: toStationCode(station.sigla || station.id || station.mountpoint),
         latitude: station.latitude,
         longitude: station.longitude,
         online: station.situacao === 'Ativo' || station.online === true,
@@ -113,6 +127,7 @@ function App() {
         identifier: station.identifier || station.mountpoint,
         mountpoint: station.mountpoint || station.identifier,
         name: station.name || station.mountpoint,
+        code: toStationCode(station.mountpoint || station.identifier),
         latitude: station.latitude,
         longitude: station.longitude,
         online: station.online || false,
@@ -131,7 +146,7 @@ function App() {
 
     try {
       // Try IBGE endpoint first
-      const response = await fetch('/api/stations-ibge');
+      const response = await fetch(apiUrl('/api/stations-ibge'));
       const data = await response.json();
 
       if (!response.ok) {
@@ -149,7 +164,7 @@ function App() {
 
       // Fallback to NTRIP
       try {
-        const fallbackResponse = await fetch('/api/stations');
+        const fallbackResponse = await fetch(apiUrl('/api/stations'));
         const fallbackData = await fallbackResponse.json();
 
         if (!fallbackResponse.ok) {
@@ -189,13 +204,23 @@ function App() {
     setFilteredStations(filtered);
   }, [searchTerm, statusFilter, stations]);
 
+  const stationStats = useMemo(() => {
+    const online = stations.filter((s) => s.online).length;
+    return {
+      total: stations.length,
+      online,
+      offline: stations.length - online,
+    };
+  }, [stations]);
+
   const handleShowOnMap = (station) => {
     setFocusedStation({ ...station, _focusTs: Date.now() });
     setView('map');
   };
 
   const handleInfo = (station) => {
-    setSelectedStation(selectedStation === station.mountpoint ? null : station.mountpoint);
+    const code = station.code || station.mountpoint;
+    setSelectedStation(selectedStation === code ? null : code);
   };
 
   return (
@@ -282,13 +307,13 @@ function App() {
 
           {/* Export Buttons */}
           <div className="export-section">
-            <a href="/api/export/stations.csv" className="btn-export" download>
+            <a href={apiUrl('/api/export/stations.csv')} className="btn-export" download>
               Export CSV
             </a>
-            <a href="/api/export/availability.csv" className="btn-export" download>
+            <a href={apiUrl('/api/export/availability.csv')} className="btn-export" download>
               Export Availability
             </a>
-            <a href="/api/docs" className="btn-export" target="_blank" rel="noopener noreferrer">
+            <a href={apiUrl('/api/docs')} className="btn-export" target="_blank" rel="noopener noreferrer">
               API Docs
             </a>
           </div>
@@ -328,6 +353,34 @@ function App() {
       </header>
 
       <main className="content">
+        {!loading && stations.length > 0 && (
+          <section className="stats-strip" aria-label={language === 'pt' ? 'Resumo da rede' : 'Network summary'}>
+            <div className="kpi">
+              <span className="kpi-value">{stationStats.total}</span>
+              <span className="kpi-label">{t('stations')}</span>
+            </div>
+            <div className="kpi kpi-online">
+              <span className="kpi-dot online" aria-hidden="true" />
+              <span className="kpi-value">{stationStats.online}</span>
+              <span className="kpi-label">{t('online')}</span>
+            </div>
+            <div className="kpi kpi-offline">
+              <span className="kpi-dot offline" aria-hidden="true" />
+              <span className="kpi-value">{stationStats.offline}</span>
+              <span className="kpi-label">{t('offline')}</span>
+            </div>
+            <div className="kpi kpi-live">
+              <span className={`live-dot ${sseConnected ? 'connected' : ''}`} aria-hidden="true" />
+              <span className="kpi-label">
+                {sseConnected
+                  ? language === 'pt' ? 'Tempo real' : 'Real-time'
+                  : language === 'pt' ? 'Cache' : 'Cached'}
+              </span>
+              <span className="kpi-label kpi-source">· {dataSource || '—'}</span>
+            </div>
+          </section>
+        )}
+
         {!sseConnected && stations.length > 0 && (
           <div className="offline-banner" role="status">
             {language === 'pt'
@@ -356,7 +409,7 @@ function App() {
           ) : view === 'map' ? (
             <StationMap stations={filteredStations} focusedStation={focusedStation} />
           ) : (
-            <StationList stations={filteredStations} onShowOnMap={handleShowOnMap} />
+            <StationList stations={filteredStations} onShowOnMap={handleShowOnMap} onInfo={handleInfo} />
           )
         )}
 

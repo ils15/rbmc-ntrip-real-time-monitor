@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiUrl } from '../api';
 import { ExternalLink, Lock, Shield, FileText, Database } from 'lucide-react';
 import { useLanguage, useTranslation } from '../i18n.jsx';
 
@@ -15,7 +16,7 @@ const PolicyPanel = () => {
   const [coverage, setCoverage] = useState(null);
 
   useEffect(() => {
-    fetch('/api/coverage')
+    fetch(apiUrl('/api/coverage'))
       .then(r => r.json())
       .then(setCoverage)
       .catch(() => {});

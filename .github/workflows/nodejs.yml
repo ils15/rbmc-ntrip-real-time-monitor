@@ -20,7 +20,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version-file: '.nvmrc'
 
       - name: Install dependencies (root)
         run: npm install
@@ -30,10 +30,15 @@ jobs:
           cd client
           npm install
 
+      - name: Run backend tests
+        run: npm test
+
+      - name: Run frontend tests
+        run: |
+          cd client
+          npm test
+
       - name: Build frontend
         run: |
           cd client
           npm run build
-
-      - name: Run backend syntax check
-        run: node -c server.js

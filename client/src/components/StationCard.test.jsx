@@ -15,8 +15,9 @@ vi.mock('../i18n.jsx', () => ({
         equipment: 'Equipamento',
         dataQualityExcellent: 'Qualidade de Dados: Excelente',
         dataQualityUnavailable: 'Qualidade de Dados: Indisponível',
-        showOnMap: 'Ver no mapa',
-        reportsAndRinex: 'Relatórios & RINEX',
+      showOnMap: 'Ver no mapa',
+      availability: 'Disponibilidade',
+      reportsAndRinex: 'Relatórios & RINEX',
       },
     };
     return translations.pt[key] || key;
@@ -86,5 +87,19 @@ describe('StationCard', () => {
     expect(reportsBtn).toBeInTheDocument();
     fireEvent.click(reportsBtn);
     expect(onOpenDownloads).toHaveBeenCalledWith(mockStation);
+  });
+
+  it('renders availability button and triggers onInfo callback', () => {
+    const onInfo = vi.fn();
+    render(<StationCard station={mockStation} onInfo={onInfo} />);
+    const availabilityBtn = screen.getByRole('button', { name: /disponibilidade/i });
+    expect(availabilityBtn).toBeInTheDocument();
+    fireEvent.click(availabilityBtn);
+    expect(onInfo).toHaveBeenCalledWith(mockStation);
+  });
+
+  it('hides availability button when onInfo is not provided', () => {
+    render(<StationCard station={mockStation} />);
+    expect(screen.queryByRole('button', { name: /disponibilidade/i })).not.toBeInTheDocument();
   });
 });

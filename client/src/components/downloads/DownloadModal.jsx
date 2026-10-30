@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Download, X } from 'lucide-react';
 import { useLanguage, useTranslation } from '../../i18n.jsx';
+import { apiUrl } from '../../api';
 
 const DownloadModal = ({ station, onClose }) => {
   const { language } = useLanguage();
@@ -70,7 +71,7 @@ const DownloadModal = ({ station, onClose }) => {
       try {
         const primary = candidateCodes[0];
         const extras = candidateCodes.slice(1).join(',');
-        const url = `/api/rbmc/availability/${primary}/${rinexYear}/${rinexDay}/${rinexHour}/${rinexMinute}/${rinexType}?candidates=${encodeURIComponent(extras)}`;
+        const url = apiUrl(`/api/rbmc/availability/${primary}/${rinexYear}/${rinexDay}/${rinexHour}/${rinexMinute}/${rinexType}?candidates=${encodeURIComponent(extras)}`);
         const response = await fetch(url);
         const payload = await response.json();
 
@@ -162,7 +163,7 @@ const DownloadModal = ({ station, onClose }) => {
               <button
                 className="btn-primary"
                 onClick={() => downloadFromApi(
-                  `/api/rbmc/relatorio/${resolvedCodes.report}`,
+                  apiUrl(`/api/rbmc/relatorio/${resolvedCodes.report}`),
                   'relatorio',
                   `${resolvedCodes.report}-relatorio-rbmc.pdf`
                 )}
@@ -236,7 +237,7 @@ const DownloadModal = ({ station, onClose }) => {
                 <button
                   className="btn-secondary"
                   onClick={() => downloadFromApi(
-                    `/api/rbmc/rinex2/${resolvedCodes.rinex2}/${rinexYear}/${rinexDay}`,
+                    apiUrl(`/api/rbmc/rinex2/${resolvedCodes.rinex2}/${rinexYear}/${rinexDay}`),
                     'rinex2',
                     `${resolvedCodes.rinex2}-rinex2-${rinexYear}-${rinexDay}.zip`
                   )}
@@ -249,7 +250,7 @@ const DownloadModal = ({ station, onClose }) => {
                 <button
                   className="btn-secondary"
                   onClick={() => downloadFromApi(
-                    `/api/rbmc/rinex3/${resolvedCodes.rinex3}/${rinexYear}/${rinexDay}`,
+                    apiUrl(`/api/rbmc/rinex3/${resolvedCodes.rinex3}/${rinexYear}/${rinexDay}`),
                     'rinex3',
                     `${resolvedCodes.rinex3}-rinex3-${rinexYear}-${rinexDay}.gz`
                   )}
@@ -262,7 +263,7 @@ const DownloadModal = ({ station, onClose }) => {
                 <button
                   className="btn-secondary"
                   onClick={() => downloadFromApi(
-                    `/api/rbmc/rinex3-1s/${resolvedCodes.rinex31s}/${rinexYear}/${rinexDay}/${rinexHour}/${rinexMinute}/${rinexType}`,
+                    apiUrl(`/api/rbmc/rinex3-1s/${resolvedCodes.rinex31s}/${rinexYear}/${rinexDay}/${rinexHour}/${rinexMinute}/${rinexType}`),
                     'rinex3-1s',
                     `${resolvedCodes.rinex31s}-rinex3-1s-${rinexYear}-${rinexDay}-${rinexHour}-${rinexMinute}-${rinexType}.gz`
                   )}
@@ -271,25 +272,13 @@ const DownloadModal = ({ station, onClose }) => {
                   {t('rinex31s')}
                 </button>
               )}
-              {availability.orbitas && (
-                <button
-                  className="btn-secondary"
-                  onClick={() => downloadFromApi(
-                    `/api/rbmc/orbitas/${rinexYear}/${rinexDay}`,
-                    'orbitas',
-                    `orbitas-${rinexYear}-${rinexDay}.gz`
-                  )}
-                  disabled={Boolean(downloadingAction) || availabilityLoading}
-                >
-                  {t('orbitas')}
-                </button>
-              )}
+              {/* Órbitas multiconstelação removido: endpoint do IBGE retorna 404 (2026-10) */}
             </div>
-            
+
             <div className="rinex-meta">
               <span>{t('stationCodeUsed')}: {stationSigla || '—'}</span>
               {availabilityLoading && <span>{t('checkingAvailability')}</span>}
-              {!availability.report && !availability.rinex2 && !availability.rinex3 && !availability.rinex31s && !availability.orbitas && (
+              {!availability.report && !availability.rinex2 && !availability.rinex3 && !availability.rinex31s && (
                 <span className="rinex-warning">{t('noFilesForDate')}</span>
               )}
               {downloadingAction && <span>{t('downloading')}</span>}

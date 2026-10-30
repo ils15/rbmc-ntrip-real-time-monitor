@@ -42,6 +42,7 @@ export const translations = {
     downloadPdf: 'Baixar PDF oficial',
     rinexAvailabilityHint: 'RINEX costuma ficar disponível com atraso de 24-48h. Se falhar, tente D-2, D-3 ou D-7.',
     showOnMap: 'Ver no mapa',
+    availability: 'Disponibilidade',
     checkingAvailability: 'Verificando disponibilidade...',
     noFilesForDate: 'Nenhum arquivo disponível para essa data/parâmetros.',
 
@@ -131,6 +132,7 @@ export const translations = {
     downloadPdf: 'Download official PDF',
     rinexAvailabilityHint: 'RINEX data is usually available with a 24-48h delay. If it fails, try D-2, D-3 or D-7.',
     showOnMap: 'Show on map',
+    availability: 'Availability',
     checkingAvailability: 'Checking availability...',
     noFilesForDate: 'No files available for this date/parameters.',
 

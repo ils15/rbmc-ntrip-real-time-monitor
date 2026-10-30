@@ -12,7 +12,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Configuração de CORS via variáveis de ambiente
-const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:3000')
+const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:3000,https://ils15.github.io')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
@@ -33,15 +33,16 @@ app.use(cors({
 app.use(helmet());
 app.use(express.json());
 
-// Rate limiting: 100 requests per 15 minutes per IP
+// Rate limiting: 300 requests per 15 minutes per IP, applied only to /api
+// (static assets and SPA must not count against the quota)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  max: 300,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests, please try again later.' }
 });
-app.use(limiter);
+app.use('/api', limiter);
 
 app.use(compression());
 
@@ -78,6 +79,7 @@ function broadcastStations(stations, source) {
 const { parseSourceTable } = require('./src/ntrip');
 const { IBGEClient } = require('./src/ibge-client');
 const { AvailabilityTracker } = require('./src/availability-tracker');
+const { stationsToCsv } = require('./src/csv-export');
 
 const NTRIP_CASTER_URL = process.env.NTRIP_CASTER_URL || 'http://170.84.40.52:2101';
 const RBMC_API_BASE_URL = process.env.IBGE_API_BASE_URL || 'https://servicodados.ibge.gov.br/api/v1/rbmc';
@@ -176,11 +178,7 @@ function parseIntParam(value) {
 }
 
 async function proxyBinaryFromRBMC({ url, res, fallbackFileName, contentType }) {
-  const response = await axios.get(url, {
-    responseType: 'arraybuffer',
-    timeout: 30000
-  });
-
+  const response = await fetchBinaryWithRetry(url);
   res.setHeader('Content-Type', response.headers['content-type'] || contentType || 'application/octet-stream');
 
   const upstreamDisposition = response.headers['content-disposition'];
@@ -191,6 +189,31 @@ async function proxyBinaryFromRBMC({ url, res, fallbackFileName, contentType }) 
   }
 
   res.status(200).send(response.data);
+}
+
+/**
+ * GET a binary resource with retry.
+ * The IBGE API fails transiently with 5xx/network errors; retry those with
+ * backoff but fail fast on 4xx (the resource genuinely does not exist).
+ */
+async function fetchBinaryWithRetry(url, attempts = 3) {
+  let lastError;
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      return await axios.get(url, {
+        responseType: 'arraybuffer',
+        timeout: 30000
+      });
+    } catch (error) {
+      lastError = error;
+      const status = error?.response?.status;
+      if (status >= 400 && status < 500) throw error;
+      if (attempt < attempts - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+      }
+    }
+  }
+  throw lastError;
 }
 
 function sendRBMCProxyError(res, error, defaultMessage) {
@@ -652,22 +675,7 @@ app.get('/api/export/stations.csv', (req, res) => {
       return res.status(404).json({ error: 'No station data available' });
     }
 
-    const headers = ['mountpoint', 'identifier', 'format', 'country', 'latitude', 'longitude', 'online', 'status'];
-    const rows = lastStationsData.stations.map(s => 
-      headers.map(h => {
-        let val = s[h] ?? '';
-        if (typeof val === 'boolean') val = val ? 'online' : 'offline';
-        if (h === 'status') val = s.online ? 'online' : 'offline';
-        // Escape CSV values
-        val = String(val).replace(/"/g, '""');
-        if (val.includes(',') || val.includes('"') || val.includes('\n')) {
-          val = `"${val}"`;
-        }
-        return val;
-      }).join(',')
-    );
-
-    const csv = [headers.join(','), ...rows].join('\n');
+    const csv = stationsToCsv(lastStationsData.stations);
     
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="rbmc-stations-${new Date().toISOString().slice(0,10)}.csv"`);

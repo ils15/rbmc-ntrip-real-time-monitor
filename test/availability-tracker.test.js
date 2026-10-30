@@ -2,7 +2,22 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const { describe, it, beforeEach, afterEach } = require('node:test');
-const { AvailabilityTracker } = require('../src/availability-tracker');
+const { AvailabilityTracker, normalizeStationKey } = require('../src/availability-tracker');
+
+describe('normalizeStationKey', () => {
+  it('should reduce mountpoints to 4-char station codes', () => {
+    assert.strictEqual(normalizeStationKey('NAUS00BGD0'), 'NAUS');
+    assert.strictEqual(normalizeStationKey('CEEU1'), 'CEEU');
+    assert.strictEqual(normalizeStationKey('ssra-02'), 'SSRA');
+    assert.strictEqual(normalizeStationKey('RJNI'), 'RJNI');
+  });
+
+  it('should handle empty/invalid input', () => {
+    assert.strictEqual(normalizeStationKey(''), '');
+    assert.strictEqual(normalizeStationKey(null), '');
+    assert.strictEqual(normalizeStationKey('---'), '');
+  });
+});
 
 describe('AvailabilityTracker', () => {
   let tracker;
@@ -73,6 +88,20 @@ describe('AvailabilityTracker', () => {
       ];
       tracker.recordBatch(stations);
       assert.strictEqual(tracker.getHistory('RJRO', 1).length, 1);
+    });
+
+    it('should normalize long mountpoints to 4-char codes', () => {
+      const stations = [
+        { mountpoint: 'NAUS00BGD0', online: true },
+        { id: 'SSRA02IGS0_SIRGAS2000', online: true }
+      ];
+      tracker.recordBatch(stations);
+
+      assert.strictEqual(tracker.getHistory('NAUS', 1).length, 1);
+      assert.strictEqual(tracker.getHistory('SSRA', 1).length, 1);
+      // Long-form lookups resolve to the same normalized key
+      assert.strictEqual(tracker.getHistory('naus00bgd0', 1).length, 1);
+      assert.strictEqual(tracker.getUptime('SSRA02IGS0', 1).dataPoints, 1);
     });
   });
 
@@ -166,6 +195,25 @@ describe('AvailabilityTracker', () => {
       if (fs.existsSync(nonExistentPath)) {
         fs.unlinkSync(nonExistentPath);
       }
+    });
+
+    it('should migrate legacy long keys to normalized codes on load', () => {
+      const legacyData = {
+        NAUS00BGD0: [
+          { status: 'online', timestamp: '2026-10-01T00:00:00.000Z' },
+          { status: 'offline', timestamp: '2026-10-02T00:00:00.000Z' }
+        ],
+        'SSRA02IGS0_SIRGAS2000': [
+          { status: 'online', timestamp: '2026-10-01T00:00:00.000Z' }
+        ]
+      };
+      fs.writeFileSync(testFilePath, JSON.stringify(legacyData));
+
+      const migrated = new AvailabilityTracker({ filePath: testFilePath });
+      assert.ok(migrated.data.NAUS, 'NAUS key should exist after migration');
+      assert.strictEqual(migrated.data.NAUS.length, 2);
+      assert.ok(migrated.data.SSRA, 'SSRA key should exist after migration');
+      assert.ok(!migrated.data.NAUS00BGD0, 'legacy key should be gone');
     });
   });
 

@@ -8,7 +8,11 @@ O projeto consiste em um dashboard que exibe o status e a localização das esta
 
 - Visualização de mapa com todas as estações RBMC.
 - Lista detalhada das estações (ponto de montagem, sistema de navegação, etc.).
-- Atualização em tempo real via proxy Node.js.
+- Atualização em tempo real via proxy Node.js (SSE) com indicador de conexão.
+- Painel de KPIs no topo: total de estações, online/offline e status da fonte de dados.
+- Gráfico de disponibilidade de 30 dias por estação (botão "Disponibilidade" no card).
+- Exportação CSV de estações e de disponibilidade (uptime) diretamente da interface.
+- Relatórios oficiais (PDF) e dados RINEX 2/3 via proxy da API RBMC do IBGE.
 - Interface responsiva com design moderno.
 - Tema claro/escuro com basemap dedicado por tema.
 - Aba de privacidade e documentacao com referencias oficiais do IBGE.

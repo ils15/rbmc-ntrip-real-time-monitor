@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
+import { apiUrl } from '../api';
 
 export function useStationSSE(onStationsUpdate, onConnectionChange, enabled = true) {
   const eventSourceRef = useRef(null);
@@ -10,7 +11,7 @@ export function useStationSSE(onStationsUpdate, onConnectionChange, enabled = tr
     if (!enabled) return;
     
     try {
-      const es = new EventSource('/api/events');
+      const es = new EventSource(apiUrl('/api/events'));
       eventSourceRef.current = es;
 
       es.onopen = () => {

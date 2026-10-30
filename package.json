@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node --test test/ntrip.test.js test/ibge-client.test.js test/integration.test.js test/availability-tracker.test.js",
+    "test": "node --test test/ntrip.test.js test/ibge-client.test.js test/integration.test.js test/availability-tracker.test.js test/csv-export.test.js",
     "test:all": "npm test && cd client && npm test",
     "start": "node server.js",
     "dev": "node --watch server.js",

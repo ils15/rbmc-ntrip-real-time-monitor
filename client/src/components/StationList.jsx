@@ -5,7 +5,7 @@ import { useLanguage, useTranslation } from '../i18n.jsx';
 
 const STATIONS_PER_PAGE = 15;
 
-const StationList = ({ stations, onShowOnMap }) => {
+const StationList = ({ stations, onShowOnMap, onInfo }) => {
   const { language } = useLanguage();
   const t = useTranslation(language);
   const [currentPage, setCurrentPage] = useState(1);
@@ -75,11 +75,12 @@ const StationList = ({ stations, onShowOnMap }) => {
     <section className="station-list-section">
       <div key={currentPage} className="station-list-container page-transition">
         {paginatedStations.map((station) => (
-          <StationCard 
-            key={station.mountpoint} 
-            station={station} 
+          <StationCard
+            key={station.mountpoint}
+            station={station}
             onOpenDownloads={setSelectedStation}
             onShowOnMap={onShowOnMap}
+            onInfo={onInfo}
           />
         ))}
       </div>
